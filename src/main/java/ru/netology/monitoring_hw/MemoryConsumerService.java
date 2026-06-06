@@ -2,33 +2,37 @@ package ru.netology.monitoring_hw;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
-public class MemoryConsumer {
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Service;
 
-    private static final Logger log = LoggerFactory.getLogger(MemoryConsumer.class);
-    private final List<byte[]> memoryBlocks = new ArrayList<>();
+@Service
+public class MemoryConsumerService {
+    private static final Logger logger = LoggerFactory.getLogger(MemoryConsumerService.class);
+    private final List<byte[]> memoryHog = new ArrayList<>();
 
-    @Value("${memory.block.size.mb:50}")      // размер блока в мегабайтах
-    private int blockSizeMb;
-
-    @Value("${memory.max.blocks:10}")          // максимальное количество блоков
-    private int maxBlocks;
-
-    @Scheduled(fixedDelay = 10000)             // каждые 10 секунд
-    public void consumeMemory() {
-        if (memoryBlocks.size() < maxBlocks) {
-            byte[] block = new byte[blockSizeMb * 1024 * 1024];
-            memoryBlocks.add(block);
-            log.info("Выделен блок памяти, всего блоков: {}", memoryBlocks.size());
-        } else {
-            log.info("Достигнут лимит блоков ({}), больше не выделяем", maxBlocks);
-        }
+    @PostConstruct
+    public void startConsuming() {
+        Thread consumer = new Thread(() -> {
+            while (true) {
+                try {
+                    byte[] chunk = new byte[10 * 1024 * 1024];
+                    memoryHog.add(chunk);
+                    logger.info("Allocated 10 MB, total chunks: {}", memoryHog.size());
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (OutOfMemoryError e) {
+                    logger.error("Out of memory, stopping allocation");
+                    break;
+                }
+            }
+        });
+        consumer.setDaemon(true);
+        consumer.start();
     }
 }

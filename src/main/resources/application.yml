@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus,metrics"
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: "memory-consumer"
+
+spring:
+  application:
+    name: memory-consumer

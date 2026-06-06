@@ -1,0 +1,11 @@
+groups:
+  - name: memory_alerts
+    rules:
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected (instance {{ $labels.instance }})"
+          description: "Heap memory usage is above 90% for more than 1 minute. Current value: {{ $value | humanizePercentage }}"
